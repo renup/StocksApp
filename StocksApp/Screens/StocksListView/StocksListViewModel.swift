@@ -52,6 +52,7 @@ class StocksListViewModel: ObservableObject {
     func fetchStocks() {
         state = .loading
         service.fetchStocks()
+            .receive(on: DispatchQueue.main)
             .mapError { error -> Error in
                 self.state = .error
                 return error
