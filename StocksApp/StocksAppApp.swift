@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct StocksAppApp: App {
+//    @StateObject var viewModel = StocksListViewModel(service: StocksService())
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+//            StocksListView(viewModel: viewModel)
+            StocksListView()
         }
     }
 }
