@@ -8,9 +8,7 @@
 import SwiftUI
 
 struct StocksListView: View {
-    @StateObject var viewModel = StocksListViewModel(service: StocksService())
-    //    @ObservedObject var viewModel: StocksListViewModel
-    
+    @StateObject var viewModel = StocksListViewModel(service: StocksService())    
     
     var body: some View {
         NavigationView {
