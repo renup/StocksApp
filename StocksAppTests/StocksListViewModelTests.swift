@@ -29,13 +29,20 @@ final class StocksListViewModelTests: XCTestCase {
         let exp = XCTestExpectation(description: "fetch stocks success is empty")
         viewModel.fetchStocks()
         
-        viewModel.$stockGroup
+        viewModel.$state
             .sink { completion in
                 XCTFail("Fetch stocks should not fail")
-            } receiveValue: { stocks in
-                XCTAssertEqual(viewModel.stockGroup.count, 0)
-                XCTAssertEqual(viewModel.state, AsyncState.loaded)
-                exp.fulfill()
+            } receiveValue: { state in
+                switch state {
+                case .initial, .loading:
+                    break
+                case .loaded:
+                    XCTAssertEqual(viewModel.stockGroup.count, 0)
+                    XCTAssertEqual(state, .loaded)
+                    exp.fulfill()
+                case .error:
+                    XCTFail()
+                }
             }
             .store(in: &cancellables)
         wait(for: [exp], timeout: 1.0)
@@ -45,14 +52,21 @@ final class StocksListViewModelTests: XCTestCase {
         let viewModel = StocksListViewModel(service: MockStocksService(fileName: .stocks_failure_badResponse))
         let exp = XCTestExpectation(description: "fetch stocks failure")
         viewModel.fetchStocks()
-        
-        viewModel.$stockGroup
+ 
+        viewModel.$state
             .sink { completion in
                 XCTFail("Fetch stocks should not fail")
-            } receiveValue: { stocks in
-                XCTAssertEqual(stocks.count, 0)
-                XCTAssertEqual(viewModel.state, AsyncState.error)
-                exp.fulfill()
+            } receiveValue: { state in
+                switch state {
+                case .initial, .loading:
+                    break
+                case .loaded:
+                    XCTFail()
+                case .error:
+                    XCTAssertEqual(state, .error)
+                    XCTAssertEqual(viewModel.stockGroup.count, 0)
+                    exp.fulfill()
+                }
             }
             .store(in: &cancellables)
         wait(for: [exp], timeout: 1.0)
@@ -64,20 +78,27 @@ final class StocksListViewModelTests: XCTestCase {
         let exp = XCTestExpectation(description: "fetch stocks success")
         viewModel.fetchStocks()
         
-        viewModel.$stockGroup
-            .sink { completion in
-                XCTFail("Fetch stocks should not fail")
-            } receiveValue: { sections in
-                let stockSection = sections.first
-                XCTAssertEqual(stockSection?.timestamp, "12:23 PM PDT, Tuesday, April 18, 2023")
-                let stock = stockSection?.stocks.first
-                XCTAssertEqual(stock?.name, "S&P 500")
-                XCTAssertEqual(stock?.ticker, "GSPC")
-                XCTAssertEqual(stock?.currency, "USD")
-                exp.fulfill()
-                
+        viewModel.$state
+            .sink { state in
+                switch state {
+                case .initial, .loading:
+                    break
+                case .loaded:
+                    let stockSection = viewModel.stockGroup.first
+                    XCTAssertEqual(stockSection?.timestamp, "12:23 PM PDT, Tuesday, April 18, 2023")
+                    let stock = stockSection?.stocks.first
+                    XCTAssertEqual(stock?.name, "S&P 500")
+                    XCTAssertEqual(stock?.ticker, "GSPC")
+                    XCTAssertEqual(stock?.currency, "USD")
+                    exp.fulfill()
+                case .error:
+                    XCTFail()
+                }
+                if case .loaded = state {
+                    exp.fulfill()
+                }
             }
-            .store(in: &self.cancellables)
+            .store(in: &cancellables)
         wait(for: [exp], timeout: 5.0)
         XCTAssertFalse(viewModel.stockGroup.isEmpty)
     }
